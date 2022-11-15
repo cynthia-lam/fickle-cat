@@ -1,0 +1,129 @@
+// Author: Cynthia Lam
+// APSC 383 Prototyping Fall 2022
+// Fickle cat
+// Requires RGB LED, sonar sensor, servo motor
+
+
+
+/**********************************************************************************
+VARIABLE INITIALIZATION/DEFINITION
+**********************************************************************************/
+
+int threshold = 5; // just starting with a random threshold before random() kicks in
+int count = 0;
+int delay_time = 250; // in milliseconds, how often the LED refreshes
+int change_time = 12; // how many intervals of delay_time, how often the threshold changes
+
+//RGB LED PIN SET UP
+int red_light_pin= 11;
+int green_light_pin = 10;
+int blue_light_pin = 9;
+
+//SONAR SENSOR SET UP
+#define echoPin 2 // attach pin D2 Arduino to pin Echo of HC-SR04
+#define trigPin 3 //attach pin D3 Arduino to pin Trig of HC-SR04
+long duration; // variable for the duration of sound wave travel
+int distance; // variable for the distance measurement
+
+//SERVO MOTOR SET UP
+#include <Servo.h>
+Servo myservo;  // create servo object to control a servo
+int pos = 90;    // variable to store the servo position
+
+
+  
+/**********************************************************************************
+SET UP 
+**********************************************************************************/
+
+void setup() {
+  
+  //SONAR 
+  pinMode(trigPin, OUTPUT); // Sets the trigPin as an OUTPUT
+  pinMode(echoPin, INPUT); // Sets the echoPin as an INPUT
+  Serial.begin(9600); // // Serial Communication is starting with 9600 of baudrate speed
+  Serial.println("Ultrasonic Sensor HC-SR04 Test"); // print some text in Serial Monitor
+  Serial.println("with Arduino UNO R3");
+
+  //RGB LED
+  pinMode(red_light_pin, OUTPUT);
+  pinMode(green_light_pin, OUTPUT);
+  pinMode(blue_light_pin, OUTPUT);
+
+  //SERVO MOTOR
+  myservo.attach(6);  // attaches the servo on pin 9 to the servo object
+}
+
+
+
+/**********************************************************************************
+RGB HELPER FUNCTION
+**********************************************************************************/
+
+void RGB_color(int red_light_value, int green_light_value, int blue_light_value)
+ {
+  analogWrite(red_light_pin, red_light_value);
+  analogWrite(green_light_pin, green_light_value);
+  analogWrite(blue_light_pin, blue_light_value);
+}
+
+
+
+/**********************************************************************************
+LOOP
+**********************************************************************************/
+
+void loop() {
+  
+  //INPUT: SONAR SENSOR
+  // Clears the trigPin condition
+  digitalWrite(trigPin, LOW);
+  delayMicroseconds(2);
+  // Sets the trigPin HIGH (ACTIVE) for 10 microseconds
+  digitalWrite(trigPin, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(trigPin, LOW);
+  // Reads the echoPin, returns the sound wave travel time in microseconds
+  duration = pulseIn(echoPin, HIGH);
+  // Calculating the distance
+  distance = duration * 0.034 / 2; // Speed of sound wave divided by 2 (go and back)
+  
+  // Displays the distance on the Serial Monitor
+  Serial.print("Distance: ");
+  Serial.print(distance);
+  Serial.println(" cm");
+  Serial.print("Current threshold: ");
+  Serial.print(threshold);
+  Serial.println(" cm");
+  
+  //OUTPUTS: RGB LED AND SERVO MOTOR
+  // needs to go further
+  if (distance < threshold) {
+    RGB_color(0, 255, 255); //red
+    pos += 20;
+    myservo.write(pos);
+  }
+  //needs to come closer
+  else if (distance > threshold+5) {
+    RGB_color(255, 255, 0); //blue
+    pos -= 20;
+    myservo.write(pos);
+  }
+  // good!
+  else {
+    RGB_color(255, 0, 255); //green
+    pos = 90;
+    myservo.write(pos);
+  }
+
+  //THRESHOLD CHANGE
+  if (count < change_time){
+    count ++;
+  }
+  else if (count == change_time){
+    threshold = random(3,30);
+    count = 0;
+  }
+  
+  delay(delay_time);
+}
